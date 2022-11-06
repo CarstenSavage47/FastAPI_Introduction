@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 import uvicorn
 import hypercorn
+import requests
 
 app = FastAPI()
 
@@ -27,11 +28,22 @@ def index():
 
 @app.get('/cities') # This is a Get request
 def get_cities(): # Create function
+        results = [] # Create results list
+        for city in db:
+            r = requests.get(f'http://worldtimeapi.org/api/timezone/{city["timezone"]}') # Pull timezone
+            print(r.json())
+            current_time = r.json()['datetime'] # Get the result - Convert request to JSON
+            results.append({'name': city['name'],'timezone':city['timezone'],'current_time':current_time})
         return db # Return database
 
 @app.get('/cities/{city_id}')
 def get_city(city_id: int):
     return db[city_id-1]
+    r = requests.get(f'http://worldtimeapi.org/api/timezone/{city["timezone"]}')  # Pull timezone
+    current_time = r.json()['datetime']  # Get the result - Convert request to JSON
+    return {'name': city['name'],'timezone':city['timezone'],'current_time':current_time}
+
+#http://127.0.0.1:8000/cities/1 # This url gets us the first entry in the Cities API.
 
 @app.post('/cities') # Allows us to create a city
 def create_city(city:City): # By doing this, FastAPI expects something that resembles a city to be in the body of the request. We can create a city in the body of the request, send it, and then FastAPI will put it in the variable city.
